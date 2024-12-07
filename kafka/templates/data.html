@@ -1,0 +1,248 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kafka Data Table</title>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f9f9f9;
+        color: #333;
+      }
+      h1 {
+        text-align: center;
+        margin-top: 20px;
+        color: #4caf50;
+      }
+      table {
+        width: 90%;
+        margin: 30px auto;
+        border-collapse: collapse;
+        background-color: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        border-radius: 10px;
+      }
+      thead {
+        background-color: #4caf50;
+        color: white;
+      }
+      th,
+      td {
+        padding: 15px;
+        text-align: center;
+      }
+      th {
+        font-size: 16px;
+        letter-spacing: 0.5px;
+      }
+      tr:nth-child(even) {
+        background-color: #f2f2f2;
+      }
+      tr:hover {
+        background-color: #09ef78;
+        transition: background-color 0.3s ease-in-out;
+      }
+      tbody td {
+        font-size: 14px;
+        color: #555;
+      }
+      .pagination {
+        text-align: center;
+        margin: 20px 0;
+      }
+      .pagination a {
+        text-decoration: none;
+        color: #4caf50;
+        padding: 8px 16px;
+        border: 1px solid #ddd;
+        margin: 0 5px;
+        border-radius: 5px;
+      }
+      .pagination a:hover {
+        background-color: #4caf50;
+        color: white;
+      }
+      .pagination .current {
+        background-color: #4caf50;
+        color: white;
+        border: none;
+      }
+      .header-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 5px;
+        padding: 5px;
+        background-color: #4caf50;
+        border-radius: 10px;
+      }
+
+      .header-logo {
+        height: 50px;
+        margin-right: 300px;
+        justify-content: left;
+      }
+
+      h1 {
+        color: white;
+        margin: 0;
+        font-size: 25px;
+        align-items: center;
+        justify-content: center;
+        margin-right: 500px;
+      }
+      .search-container {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      .search-container input[type="text"] {
+        width: 300px;
+        padding: 10px;
+        margin-right: 10px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .search-container button {
+        padding: 10px 20px;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+      }
+      .search-container button:hover {
+        background-color: #45a049;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header-container">
+      <a href="https://ibridge360.com/" target="_blank">
+        <img
+          src="https://ibridge360.com/wp-content/uploads/2024/02/final-illustrator-logo-1-1.png"
+          alt="iBridge360 Logo"
+          class="header-logo"
+        />
+      </a>
+      <h1>Kafka Data Table</h1>
+    </div>
+
+    <div class="search-container">
+      <form method="GET" action="{% url 'kafka_data_view' %}">
+        <label for="user_id">Search by User ID:</label>
+        <input
+          type="text"
+          id="user_id"
+          name="user_id"
+          placeholder="Enter User ID"
+          value="{{ request.GET.user_id }}"
+        />
+        <button type="submit">Search</button>
+      </form>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Recorded Date</th>
+          <th>User ID</th>
+          <th>Minutes</th>
+          <th>Inserted At</th>
+          <th>Updated At</th>
+        </tr>
+      </thead>
+
+      <tbody id="data-container">
+        <!-- Data will be displayed here -->
+      </tbody>
+
+    </table>
+
+    <div class="pagination">
+      {% if page_obj.has_previous %}
+      <a href="?page=1">&laquo; First</a>
+      <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+      {% endif %}
+      <span class="current"
+        >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span
+      >
+      {% if page_obj.has_next %}
+      <a href="?page={{ page_obj.next_page_number }}">Next</a>
+      <a href="?page={{ page_obj.paginator.num_pages }}">Last &raquo;</a>
+      {% endif %}
+    </div>
+
+
+
+    <script>
+      // Establish WebSocket connection
+      const socket = new WebSocket("ws://" + "localhost:8000" + "/ws/ac/");
+      console.log("current url: ", socket);
+
+      socket.onopen = function (event) {
+        // Once connected, you can send a request for updated data
+        socket.send(
+          JSON.stringify({
+            msg: "get_updated_data", // Action to fetch updated data
+          })
+        );
+      };
+
+      socket.onmessage = function (event) {
+        const data = JSON.parse(event.data);
+
+        console.log('Got Data from Backend: ', data)
+
+        // Assuming the data contains the updated information
+        let htmlContent = "";
+
+        data.data.forEach((item) => {
+          // htmlContent += <p>${item}</p>;  // Replace with actual field names
+          let ttr = document.createElement("tr");
+              ttr.innerHTML += `
+            <td>${item.ID}</td>
+            <td>${item.RECORDEDDATE}</td>
+            <td>${item.USER_ID}</td>
+            <td>${item.MINUTES}</td>
+            <td>${item.INSERTED_AT}</td>
+            <td>${item.UPDATED_AT}</td>
+            
+          `
+
+      
+
+          document.getElementById("data-container").appendChild(ttr);
+        });
+      };
+
+      socket.onclose = function (event) {
+        console.log("WebSocket connection closed");
+      };
+
+      socket.onerror = function (error) {
+        console.log("WebSocket error:", error);
+      };
+    </script>
+
+  </body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
